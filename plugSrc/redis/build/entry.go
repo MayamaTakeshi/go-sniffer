@@ -3,10 +3,12 @@ package build
 import (
 	"bufio"
 	"fmt"
-	"github.com/google/gopacket"
 	"io"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/gopacket"
 )
 
 type Redis struct {
@@ -70,7 +72,7 @@ func (red Redis) ResolveStream(net, transport gopacket.Flow, r io.Reader) {
 			}
 			cmd += " " + string(c)
 		}
-		fmt.Println(cmd)
+		fmt.Println(time.Now().Format("2006-01-02 15:04:05.000") + " | " + cmd)
 	}
 }
 

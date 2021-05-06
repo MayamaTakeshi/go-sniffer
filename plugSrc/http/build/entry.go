@@ -3,12 +3,13 @@ package build
 import (
 	"bufio"
 	"fmt"
-	"github.com/google/gopacket"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
+
+	"github.com/google/gopacket"
 )
 
 const (
@@ -58,8 +59,8 @@ func (m *H) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 			msg += req.Form.Encode()
 			msg += "]"
 
-			log.Println(msg)
-
+			fmt.Println(time.Now().Format("2006-01-02 15:04:05.000") + " | " + msg)
+			// log.Println()
 			req.Body.Close()
 		}
 	}

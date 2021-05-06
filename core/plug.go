@@ -2,16 +2,18 @@ package core
 
 import (
 	"fmt"
-	hp "github.com/40t/go-sniffer/plugSrc/http/build"
-	mongodb "github.com/40t/go-sniffer/plugSrc/mongodb/build"
-	mysql "github.com/40t/go-sniffer/plugSrc/mysql/build"
-	redis "github.com/40t/go-sniffer/plugSrc/redis/build"
-	"github.com/google/gopacket"
 	"io"
 	"io/ioutil"
 	"path"
 	"path/filepath"
 	"plugin"
+
+	hp "github.com/40t/go-sniffer/plugSrc/http/build"
+	mongodb "github.com/40t/go-sniffer/plugSrc/mongodb/build"
+	mssql "github.com/40t/go-sniffer/plugSrc/mssql/build"
+	mysql "github.com/40t/go-sniffer/plugSrc/mysql/build"
+	redis "github.com/40t/go-sniffer/plugSrc/redis/build"
+	"github.com/google/gopacket"
 )
 
 type Plug struct {
@@ -69,6 +71,8 @@ func (p *Plug) LoadInternalPlugList() {
 
 	//Http
 	list["http"] = hp.NewInstance()
+
+	list["mssql"] = mssql.NewInstance()
 
 	p.InternalPlugList = list
 }
@@ -143,6 +147,8 @@ func (p *Plug) PrintList() {
 }
 
 func (p *Plug) SetOption(plugName string, plugParams []string) {
+
+	fmt.Println("internalPlug", plugName)
 
 	//Load Internal Plug
 	if internalPlug, ok := p.InternalPlugList[plugName]; ok {

@@ -85,6 +85,7 @@ func (cm *Cmd) printHelpMessage() {
 	fmt.Println("    [exp]")
 	fmt.Println("          go-sniffer en0 redis          Capture redis packet")
 	fmt.Println("          go-sniffer en0 mysql -p 3306  Capture mysql packet")
+	fmt.Println("          go-sniffer en0 mssql -p 1433  Capture mssql packet")
 	fmt.Println()
 	fmt.Println("    go-sniffer --[commend]")
 	fmt.Println("               --help \"this page\"")
