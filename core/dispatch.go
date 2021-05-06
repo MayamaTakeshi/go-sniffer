@@ -26,15 +26,14 @@ func NewDispatch(plug *Plug, cmd *Cmd) *Dispatch {
 
 func (d *Dispatch) Capture() {
 
-	//init device
+	// Init device
 	handle, err := pcap.OpenLive(d.device, 65535, false, pcap.BlockForever)
 	if err != nil {
-		panic(err)
 		panic(err)
 		return
 	}
 
-	//set filter
+	// Set filter
 	fmt.Println(d.Plug.BPF)
 	err = handle.SetBPFFilter(d.Plug.BPF)
 	if err != nil {
@@ -45,7 +44,7 @@ func (d *Dispatch) Capture() {
 	src := gopacket.NewPacketSource(handle, handle.LinkType())
 	packets := src.Packets()
 
-	//set up assembly
+	// Set up assembly
 	streamFactory := &ProtocolStreamFactory{
 		dispatch: d,
 	}
@@ -53,7 +52,7 @@ func (d *Dispatch) Capture() {
 	assembler := NewAssembler(streamPool)
 	ticker := time.Tick(time.Minute)
 
-	//loop until ctrl+z
+	// Loop until ctrl+z
 	for {
 		select {
 		case packet := <-packets:

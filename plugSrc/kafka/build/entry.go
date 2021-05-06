@@ -2,6 +2,7 @@ package build
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -23,7 +24,8 @@ type Kafka struct {
 }
 
 type stream struct {
-	packets chan *packet
+	packets        chan *packet
+	correlationMap map[int32]requestHeader
 }
 
 type packet struct {
@@ -54,7 +56,7 @@ type messageSet struct {
 
 func newMessageSet(r io.Reader) messageSet {
 	messageSet := messageSet{}
-	messageSet.offset = ReadInt64(r)
+	_, messageSet.offset = ReadInt64(r)
 	messageSet.messageSize = ReadInt32(r)
 
 	return messageSet
@@ -128,7 +130,8 @@ func (m *Kafka) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 	if _, ok := m.source[uuid]; !ok {
 
 		var newStream = stream{
-			packets: make(chan *packet, 100),
+			packets:        make(chan *packet, 100),
+			correlationMap: make(map[int32]requestHeader),
 		}
 
 		m.source[uuid] = &newStream
@@ -141,7 +144,7 @@ func (m *Kafka) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 
 		newPacket := m.newPacket(net, transport, buf)
 		if newPacket == nil {
-			return
+			continue
 		}
 
 		m.source[uuid].packets <- newPacket
@@ -153,8 +156,22 @@ func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 	//read packet
 	pk := packet{}
 
+	/*
+		bs := make([]byte, 0)
+		count, err := r.Read(bs)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("read: %d, buffer: %b", count, bs)
+		return nil
+	*/
+
 	//read messageSize
 	pk.messageSize = ReadInt32(r)
+	if pk.messageSize == 0 {
+		return nil
+	}
+	fmt.Printf("pk.messageSize: %d\n", pk.messageSize)
 
 	//set flow direction
 	if transport.Src().String() == strconv.Itoa(m.port) {
@@ -162,6 +179,7 @@ func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 
 		respHeader := responseHeader{}
 		respHeader.correlationId = ReadInt32(r)
+		// TODO: extract request
 		pk.responseHeader = respHeader
 
 		var buf bytes.Buffer
@@ -206,29 +224,68 @@ func (stm *stream) resolve() {
 		select {
 		case packet := <-stm.packets:
 			if packet.isClientFlow {
+				stm.correlationMap[packet.requestHeader.correlationId] = packet.requestHeader
 				stm.resolveClientPacket(packet)
 			} else {
-				stm.resolveServerPacket(packet)
+				if _, ok := stm.correlationMap[packet.responseHeader.correlationId]; ok {
+					stm.resolveServerPacket(packet, stm.correlationMap[packet.responseHeader.correlationId])
+				}
 			}
 		}
 	}
 }
 
-func (stm *stream) resolveServerPacket(pk *packet) {
-	return
+func (stm *stream) resolveServerPacket(pk *packet, rh requestHeader) {
+	var msg interface{}
+	payload := pk.payload
+
+	action := Action{
+		Request:    GetRquestName(pk.apiKey),
+		Direction:  "isServer",
+		ApiVersion: pk.apiVersion,
+	}
+	switch int(rh.apiKey) {
+	case ProduceRequest:
+		msg = ReadProduceResponse(payload, rh.apiVersion)
+	case MetadataRequest:
+		msg = ReadMetadataResponse(payload, rh.apiVersion)
+	default:
+		fmt.Printf("response ApiKey:%d TODO", rh.apiKey)
+	}
+
+	if msg != nil {
+		action.Message = msg
+	}
+	bs, err := json.Marshal(action)
+	if err != nil {
+		fmt.Printf("json marshal action failed, err: %+v\n", err)
+	}
+	fmt.Printf("%s\n", string(bs))
 }
 
 func (stm *stream) resolveClientPacket(pk *packet) {
-	var msg string
+	var msg interface{}
+	action := Action{
+		Request:    GetRquestName(pk.apiKey),
+		Direction:  "isClient",
+		ApiVersion: pk.apiVersion,
+	}
 	payload := pk.payload
-
-	fmt.Println("apiKey:")
-	fmt.Println(pk.apiKey)
-
 	switch int(pk.apiKey) {
 	case ProduceRequest:
 		msg = ReadProduceRequest(payload, pk.apiVersion)
+	case MetadataRequest:
+		msg = ReadMetadataRequest(payload, pk.apiVersion)
+	default:
+		fmt.Printf("ApiKey:%d TODO", pk.apiKey)
 	}
-	_ = msg
-	//fmt.Println(msg)
+
+	if msg != nil {
+		action.Message = msg
+	}
+	bs, err := json.Marshal(action)
+	if err != nil {
+		fmt.Printf("json marshal action failed, err: %+v\n", err)
+	}
+	fmt.Printf("%s\n", string(bs))
 }
