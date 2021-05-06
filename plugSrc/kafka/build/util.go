@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+var kafkaMessageMaxBytes = 1 * 1024 * 1024 // 1MB
+var kafkaTopicPartitionMaxCount int32 = 4000
+
 func GetNowStr(isClient bool) string {
 	var msg string
 	layout := "01/02 15:04:05.000000"
@@ -22,8 +25,7 @@ func GetNowStr(isClient bool) string {
 
 func IsEof(r io.Reader) bool {
 	buf := make([]byte, 1)
-	_, err := r.Read(buf)
-	if err != nil {
+	if _, err := r.Read(buf); err != nil {
 		return true
 	}
 	return false
@@ -53,7 +55,7 @@ func ReadUint32(r io.Reader) (n uint32) {
 	return
 }
 
-func ReadInt64(r io.Reader) (err error, n int64) {
+func ReadInt64(r io.Reader) (n int64, err error) {
 	err = binary.Read(r, binary.BigEndian, &n)
 	return
 }
@@ -62,14 +64,15 @@ func ReadString(r io.Reader) (string, int) {
 
 	l := int(ReadInt16(r))
 
-	//-1 => null
-	if l == -1 {
+	// -1 => null
+	if l <= 0 || l > kafkaMessageMaxBytes {
 		return " ", 1
 	}
 
 	str := make([]byte, l)
 	if _, err := io.ReadFull(r, str); err != nil {
-		panic(err)
+		// panic(err)
+		fmt.Println(err.Error())
 	}
 
 	return string(str), l
@@ -91,7 +94,7 @@ func ReadBytes(r io.Reader) []byte {
 	l := int(ReadInt32(r))
 	result := make([]byte, 0)
 
-	if l <= 0 {
+	if l <= 0 || l > kafkaMessageMaxBytes {
 		return result
 	}
 
@@ -129,7 +132,7 @@ func ReadMessagesV1(r io.Reader) []*Message {
 	messages := make([]*Message, 0)
 	for {
 		message := Message{}
-		err, message.Offset = ReadInt64(r)
+		message.Offset, err = ReadInt64(r)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -150,8 +153,8 @@ func ReadMessagesV1(r io.Reader) []*Message {
 	return messages
 }
 
-func GetRquestName(apiKey int16) string {
-	if name, ok := RquestNameMap[apiKey]; ok {
+func GetRequestName(apiKey int16) string {
+	if name, ok := RequestNameMap[apiKey]; ok {
 		return name
 	}
 	return strconv.Itoa(int(apiKey))

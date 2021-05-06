@@ -1,52 +1,66 @@
 
 # go-sniffer
 
-> Capture mysql,mssql,redis,http,mongodb etc protocol...
-> 抓包截取项目中的数据库请求并解析成相应的语句，如mysql协议会解析为sql语句,便于调试。
-> 不要修改代码，直接嗅探项目中的数据请求。
+> Capture mysql, mssql, redis, http, mongodb etc protocol...
+> 抓包截取项目中的数据库请求并解析成相应的语句，如 mysql 协议会解析为 sql 语句，便于调试。
+> 不需要修改代码，直接嗅探项目中的数据请求。
 
 [![GitHub license](https://img.shields.io/github/license/40t/go-sniffer.svg?style=popout-square)](https://github.com/40t/go-sniffer/blob/master/LICENSE)
 
-#### [中文使用说明](#中文使用说明)
+[中文使用说明](#中文使用说明)
 
-## Support List:
+## Support List
+
 - [mysql](#mysql)
-- [Redis](#redis)
-- [Http](#http)
-- [Mongodb](#mongodb)
+- [redis](#redis)
+- [http](#http)
+- [mongodb](#mongodb)
 - [mssql](#mssql)
-- Kafka (developing)
+- kafka (developing)
 - ...
 
-## Demo:
+## Demo
+
 ``` bash
-$ go-sniffer en0 mysql
+go-sniffer en0 mysql
 ```
+
 ![image](https://github.com/40t/go-sniffer/raw/master/images/demo.gif)
-## Setup:
+
+## Setup
+
 - support : `MacOS` `Linux` `Unix`
 - not support : `windows`
 - If you encounter problems in the `go get` process, try upgrading the go version （如果go get 过程中遇到问题，请尝试升级go版本）
 
 ### Centos
+
 ``` bash
-$ yum -y install libpcap-devel
+yum -y install libpcap-devel
 ```
+
 ### Ubuntu
+
 ``` bash
-$ apt-get install libpcap-dev
+apt-get install libpcap-dev
 ```
+
 ### MacOs
+
 ``` bash
 
 ```
+
 ### RUN
+
 ``` bash
-$ go get -v -u github.com/40t/go-sniffer
-$ cp -rf $(go env GOPATH)/bin/go-sniffer /usr/local/bin
-$ go-sniffer
+go get -v -u github.com/40t/go-sniffer
+cp -rf $(go env GOPATH)/bin/go-sniffer /usr/local/bin
+go-sniffer
 ```
-## Usage:
+
+## Usage
+
 ``` bash
 ==================================================================================
 [Usage]
@@ -72,7 +86,8 @@ $ go-sniffer
 ==================================================================================
 ```
 
-#### 中文使用说明
+## 中文使用说明
+
 ``` bash
 =======================================================================
 [使用说明]
@@ -99,14 +114,35 @@ $ go-sniffer
 =======================================================================
 ```
 
-### Example:
-``` bash
-$ go-sniffer lo0 mysql 
-$ go-sniffer en0 redis 
-$ go-sniffer eth0 http -p 8080
-$ go-sniffer eth1 mongodb
-$ go-sniffer eth0 mssql 
+### Example
 
+``` bash
+go-sniffer lo0 mysql
+go-sniffer en0 redis
+go-sniffer eth0 http -p 8080
+go-sniffer eth1 mongodb
+go-sniffer eth0 mssql
 ```
-## License:
+
+## License
+
 [MIT](http://opensource.org/licenses/MIT)
+
+## FAQ
+
+### 找不到 libpcap 动态链接库
+
+报错：
+
+```text
+error while loading shared libraries: libpcap.so.0.8: cannot open shared object file: No such file or directory
+```
+
+解决办法：
+
+首先参考 [#Setup] 安装 libpcap 依赖，安装完成后如发现版本不一致仍找不到对应的 so 文件，需要手工添加软链。
+
+```bash
+# 软链的 so 文件版本视不同系统而定，请根据需要修改
+cd /lib64/ && ln -s libpcap.so.1.5.3 libpcap.so.0.8
+```

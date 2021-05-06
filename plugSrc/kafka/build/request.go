@@ -59,6 +59,9 @@ func ReadProduceRequest(r io.Reader, version int16) *ProduceReq {
 	produceReq.Timeout = time.Duration(ReadInt32(r)) * time.Millisecond
 
 	l := ReadInt32(r)
+	if l > kafkaTopicPartitionMaxCount {
+		return &produceReq
+	}
 	produceReq.Topics = make([]ProduceReqTopic, l)
 
 	for ti := range produceReq.Topics {
@@ -108,7 +111,7 @@ func ReadProduceResponse(r io.Reader, version int16) *ProduceRsp {
 			pt := ProduceRspPartitions{}
 			pt.PartitionID = ReadInt32(r)
 			pt.Error = ReadInt16(r)
-			_, pt.Offset = ReadInt64(r)
+			pt.Offset, _ = ReadInt64(r)
 			topic.Partitions = append(topic.Partitions, pt)
 		}
 		produceRsp.Topics = append(produceRsp.Topics, topic)
@@ -125,6 +128,9 @@ func ReadMetadataRequest(r io.Reader, version int16) *MetadataReq {
 	metadataReq := MetadataReq{}
 
 	l := ReadInt32(r)
+	if l > kafkaTopicPartitionMaxCount {
+		return &metadataReq
+	}
 	for i := 0; i < int(l); i++ {
 		topicName, _ := ReadString(r)
 		metadataReq.TopicNames = append(metadataReq.TopicNames, topicName)
@@ -165,6 +171,9 @@ func ReadMetadataResponse(r io.Reader, version int16) *MetadataRsp {
 	// read brokers
 	metadataRsp.Brokers = make([]Broker, 0)
 	l := ReadInt32(r)
+	if l > kafkaTopicPartitionMaxCount {
+		return &metadataRsp
+	}
 	for i := 0; i < int(l); i++ {
 		broker := Broker{}
 		broker.NodeID = ReadInt32(r)

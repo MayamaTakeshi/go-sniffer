@@ -99,7 +99,7 @@ func (p *Plug) LoadExternalPlugList() {
 
 	dir, err := ioutil.ReadDir(p.dir)
 	if err != nil {
-		panic(p.dir + "不存在，或者无权访问")
+		panic(p.dir + " 不存在，或者无权访问")
 	}
 
 	p.ExternalPlugList = make(map[string]ExternalPlug)

@@ -21,7 +21,7 @@ const (
 
 const ()
 
-var RquestNameMap = map[int16]string{
+var RequestNameMap = map[int16]string{
 	0: "ProduceRequest",
 	1: "FetchRequest",
 	2: "OffsetRequest",

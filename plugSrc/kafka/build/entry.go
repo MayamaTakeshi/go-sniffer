@@ -56,7 +56,7 @@ type messageSet struct {
 
 func newMessageSet(r io.Reader) messageSet {
 	messageSet := messageSet{}
-	_, messageSet.offset = ReadInt64(r)
+	messageSet.offset, _ = ReadInt64(r)
 	messageSet.messageSize = ReadInt32(r)
 
 	return messageSet
@@ -240,17 +240,18 @@ func (stm *stream) resolveServerPacket(pk *packet, rh requestHeader) {
 	payload := pk.payload
 
 	action := Action{
-		Request:    GetRquestName(pk.apiKey),
+		Request:    GetRequestName(pk.apiKey),
 		Direction:  "isServer",
 		ApiVersion: pk.apiVersion,
 	}
 	switch int(rh.apiKey) {
 	case ProduceRequest:
 		msg = ReadProduceResponse(payload, rh.apiVersion)
-	case MetadataRequest:
-		msg = ReadMetadataResponse(payload, rh.apiVersion)
+	// case MetadataRequest:
+	// 	msg = ReadMetadataResponse(payload, rh.apiVersion)
 	default:
-		fmt.Printf("response ApiKey:%d TODO", rh.apiKey)
+		GetRequestName(rh.apiKey)
+		fmt.Printf("resolveServerPacket Api: %s TODO: ", GetRequestName(rh.apiKey))
 	}
 
 	if msg != nil {
@@ -258,7 +259,7 @@ func (stm *stream) resolveServerPacket(pk *packet, rh requestHeader) {
 	}
 	bs, err := json.Marshal(action)
 	if err != nil {
-		fmt.Printf("json marshal action failed, err: %+v\n", err)
+		fmt.Printf("resolveServerPacket, Error: %+v\n", err)
 	}
 	fmt.Printf("%s\n", string(bs))
 }
@@ -266,7 +267,7 @@ func (stm *stream) resolveServerPacket(pk *packet, rh requestHeader) {
 func (stm *stream) resolveClientPacket(pk *packet) {
 	var msg interface{}
 	action := Action{
-		Request:    GetRquestName(pk.apiKey),
+		Request:    GetRequestName(pk.apiKey),
 		Direction:  "isClient",
 		ApiVersion: pk.apiVersion,
 	}
@@ -274,10 +275,10 @@ func (stm *stream) resolveClientPacket(pk *packet) {
 	switch int(pk.apiKey) {
 	case ProduceRequest:
 		msg = ReadProduceRequest(payload, pk.apiVersion)
-	case MetadataRequest:
-		msg = ReadMetadataRequest(payload, pk.apiVersion)
+	// case MetadataRequest:
+	// 	msg = ReadMetadataRequest(payload, pk.apiVersion)
 	default:
-		fmt.Printf("ApiKey:%d TODO", pk.apiKey)
+		fmt.Printf("resolveClientPacket Api: %s TODO: ", GetRequestName(pk.apiKey))
 	}
 
 	if msg != nil {
