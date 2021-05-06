@@ -8,7 +8,6 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -117,7 +116,7 @@ func (c *pageCache) grow() {
 		c.free = append(c.free, &pages[i])
 	}
 	if *memLog {
-		log.Println("PageCache: created", c.pcSize, "new pages")
+		fmt.Println("PageCache: created", c.pcSize, "new pages")
 	}
 	c.pcSize *= 2
 }
@@ -127,7 +126,7 @@ func (c *pageCache) next(ts time.Time) (p *page) {
 	if *memLog {
 		c.pageRequests++
 		if c.pageRequests&0xFFFF == 0 {
-			log.Println("PageCache:", c.pageRequests, "requested,", c.used, "used,", len(c.free), "free")
+			fmt.Println("PageCache:", c.pageRequests, "requested,", c.used, "used,", len(c.free), "free")
 		}
 	}
 	if len(c.free) == 0 {
@@ -301,7 +300,7 @@ func (p *StreamPool) grow() {
 		p.free = append(p.free, &conns[i])
 	}
 	if *memLog {
-		log.Println("StreamPool: created", p.nextAlloc, "new connections")
+		fmt.Println("StreamPool: created", p.nextAlloc, "new connections")
 	}
 	p.nextAlloc *= 2
 }
@@ -453,7 +452,7 @@ func (p *StreamPool) newConnection(k key, s tcpassembly.Stream, ts time.Time) (c
 	if *memLog {
 		p.newConnectionCount++
 		if p.newConnectionCount&0x7FFF == 0 {
-			log.Println("StreamPool:", p.newConnectionCount, "requests,", len(p.conns), "used,", len(p.free), "free")
+			fmt.Println("StreamPool:", p.newConnectionCount, "requests,", len(p.conns), "used,", len(p.free), "free")
 		}
 	}
 	if len(p.free) == 0 {
@@ -524,7 +523,7 @@ func (a *Assembler) AssembleWithTimestamp(netFlow gopacket.Flow, t *layers.TCP, 
 			key, !t.SYN && len(t.LayerPayload()) == 0, timestamp)
 		if conn == nil {
 			if *debugLog {
-				log.Printf("%v got empty packet on otherwise empty connection", key)
+				fmt.Printf("%v got empty packet on otherwise empty connection", key)
 			}
 			return
 		}
@@ -615,7 +614,7 @@ func (a *Assembler) addContiguous(conn *connection) {
 // connection.
 func (a *Assembler) skipFlush(conn *connection) {
 	if *debugLog {
-		log.Printf("%v skipFlush %v", conn.key, conn.nextSeq)
+		fmt.Printf("%v skipFlush %v", conn.key, conn.nextSeq)
 	}
 	if conn.first == nil {
 		a.closeConnection(conn)
@@ -636,7 +635,7 @@ func (p *StreamPool) remove(conn *connection) {
 
 func (a *Assembler) closeConnection(conn *connection) {
 	if *debugLog {
-		log.Printf("%v closing", conn.key)
+		fmt.Printf("%v closing", conn.key)
 	}
 	conn.stream.ReassemblyComplete()
 	conn.closed = true
@@ -691,7 +690,7 @@ func (a *Assembler) insertIntoConn(t *layers.TCP, conn *connection, ts time.Time
 	if (a.MaxBufferedPagesPerConnection > 0 && conn.pages >= a.MaxBufferedPagesPerConnection) ||
 		(a.MaxBufferedPagesTotal > 0 && a.pc.used >= a.MaxBufferedPagesTotal) {
 		if *debugLog {
-			log.Printf("%v hit max buffer size: %+v, %v, %v", conn.key, a.AssemblerOptions, conn.pages, a.pc.used)
+			fmt.Printf("%v hit max buffer size: %+v, %v, %v", conn.key, a.AssemblerOptions, conn.pages, a.pc.used)
 		}
 		a.addNextFromConn(conn)
 	}
@@ -736,7 +735,7 @@ func (a *Assembler) addNextFromConn(conn *connection) {
 	}
 	conn.first.Bytes, conn.nextSeq = byteSpan(conn.nextSeq, conn.first.seq, conn.first.Bytes)
 	if *debugLog {
-		log.Printf("%v   adding from conn (%v, %v)", conn.key, conn.first.seq, conn.nextSeq)
+		fmt.Printf("%v   adding from conn (%v, %v)", conn.key, conn.first.seq, conn.nextSeq)
 	}
 	a.ret = append(a.ret, conn.first.Reassembly)
 	a.pc.replace(conn.first)

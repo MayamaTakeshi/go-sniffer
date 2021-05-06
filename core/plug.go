@@ -8,11 +8,13 @@ import (
 	"path/filepath"
 	"plugin"
 
-	hp "github.com/40t/go-sniffer/plugSrc/http/build"
-	mongodb "github.com/40t/go-sniffer/plugSrc/mongodb/build"
-	mssql "github.com/40t/go-sniffer/plugSrc/mssql/build"
-	mysql "github.com/40t/go-sniffer/plugSrc/mysql/build"
-	redis "github.com/40t/go-sniffer/plugSrc/redis/build"
+	http "go-sniffer/plugSrc/http/build"
+	kafka "go-sniffer/plugSrc/kafka/build"
+	mongodb "go-sniffer/plugSrc/mongodb/build"
+	mssql "go-sniffer/plugSrc/mssql/build"
+	mysql "go-sniffer/plugSrc/mysql/build"
+	redis "go-sniffer/plugSrc/redis/build"
+
 	"github.com/google/gopacket"
 )
 
@@ -31,12 +33,17 @@ type Plug struct {
 // SetFlag       - plug-in params
 // Version       - plug-in version
 type PlugInterface interface {
+	//解析流
 	ResolveStream(net gopacket.Flow, transport gopacket.Flow, r io.Reader)
+	//BPF
 	BPFFilter() string
+	//设置插件需要的参数
 	SetFlag([]string)
+	//获取版本
 	Version() string
 }
 
+//外部插件
 type ExternalPlug struct {
 	Name          string
 	Version       string
@@ -45,17 +52,24 @@ type ExternalPlug struct {
 	SetFlag       func([]string)
 }
 
+//实例化
 func NewPlug() *Plug {
 
 	var p Plug
 
+	//设置默认插件目录
 	p.dir, _ = filepath.Abs("./plug/")
+
+	//加载内部插件
 	p.LoadInternalPlugList()
+
+	//加载外部插件
 	p.LoadExternalPlugList()
 
 	return &p
 }
 
+//加载内部插件
 func (p *Plug) LoadInternalPlugList() {
 
 	list := make(map[string]PlugInterface)
@@ -66,22 +80,26 @@ func (p *Plug) LoadInternalPlugList() {
 	//Mongodb
 	list["mongodb"] = mongodb.NewInstance()
 
+	//kafka
+	list["kafka"] = kafka.NewInstance()
+
 	//Redis
 	list["redis"] = redis.NewInstance()
 
 	//Http
-	list["http"] = hp.NewInstance()
+	list["http"] = http.NewInstance()
 
 	list["mssql"] = mssql.NewInstance()
 
 	p.InternalPlugList = list
 }
 
+//加载外部so后缀插件
 func (p *Plug) LoadExternalPlugList() {
 
 	dir, err := ioutil.ReadDir(p.dir)
 	if err != nil {
-		return
+		panic(p.dir + "不存在，或者无权访问")
 	}
 
 	p.ExternalPlugList = make(map[string]ExternalPlug)
@@ -126,10 +144,12 @@ func (p *Plug) LoadExternalPlugList() {
 	}
 }
 
+//改变插件地址
 func (p *Plug) ChangePath(dir string) {
 	p.dir = dir
 }
 
+//打印插件列表
 func (p *Plug) PrintList() {
 
 	//Print Internal Plug
@@ -146,9 +166,8 @@ func (p *Plug) PrintList() {
 	}
 }
 
+//选择当前使用的插件 && 加载插件
 func (p *Plug) SetOption(plugName string, plugParams []string) {
-
-	fmt.Println("internalPlug", plugName)
 
 	//Load Internal Plug
 	if internalPlug, ok := p.InternalPlugList[plugName]; ok {

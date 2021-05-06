@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -266,7 +265,7 @@ func (stm *stream) resolveClientPacket(payload []byte, seq int) {
 
 		serverPacket := stm.findStmtPacket(stm.packets, seq+1)
 		if serverPacket == nil {
-			log.Println("ERR : Not found stm packet")
+			fmt.Println("ERR : Not found stm packet")
 			return
 		}
 
@@ -313,7 +312,7 @@ func (stm *stream) resolveClientPacket(payload []byte, seq int) {
 		var stmt *Stmt
 		var ok bool
 		if stmt, ok = stm.stmtMap[stmtID]; ok == false {
-			log.Println("ERR : Not found stm id", stmtID)
+			fmt.Println("ERR : Not found stm id", stmtID)
 			return
 		}
 
@@ -345,7 +344,7 @@ func (stm *stream) resolveClientPacket(payload []byte, seq int) {
 			//bind params
 			err := stmt.BindArgs(nullBitmap, pTypes, pValues)
 			if err != nil {
-				log.Println("ERR : Could not bind params", err)
+				fmt.Println("ERR : Could not bind params", err)
 			}
 		}
 		msg = string(stmt.WriteToText())

@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/google/gopacket"
 	"io"
 	"strconv"
+
+	"github.com/google/gopacket"
 )
 
 const (

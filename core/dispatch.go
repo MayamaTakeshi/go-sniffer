@@ -2,13 +2,13 @@ package core
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"log"
-	"time"
 )
 
 type Dispatch struct {
@@ -29,7 +29,8 @@ func (d *Dispatch) Capture() {
 	//init device
 	handle, err := pcap.OpenLive(d.device, 65535, false, pcap.BlockForever)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
+		panic(err)
 		return
 	}
 
@@ -37,7 +38,7 @@ func (d *Dispatch) Capture() {
 	fmt.Println(d.Plug.BPF)
 	err = handle.SetBPFFilter(d.Plug.BPF)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	//capture
