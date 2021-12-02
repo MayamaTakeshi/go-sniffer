@@ -27,11 +27,11 @@ type Plug struct {
 	ExternalPlugList map[string]ExternalPlug
 }
 
-// All internal plug-ins must implement this interface
+// All internal plugins must implement this interface
 // ResolvePacket - entry
 // BPFFilter     - set BPF, like: mysql(tcp and port 3306)
-// SetFlag       - plug-in params
-// Version       - plug-in version
+// SetFlag       - plugin params
+// Version       - plugin version
 type PlugInterface interface {
 	//解析流
 	ResolveStream(net gopacket.Flow, transport gopacket.Flow, r io.Reader)
@@ -97,12 +97,14 @@ func (p *Plug) LoadInternalPlugList() {
 //加载外部so后缀插件
 func (p *Plug) LoadExternalPlugList() {
 
+	p.ExternalPlugList = make(map[string]ExternalPlug)
+
 	dir, err := ioutil.ReadDir(p.dir)
 	if err != nil {
-		panic(p.dir + " 不存在，或者无权访问")
+		// panic(p.dir + " 不存在，或者无权访问")
+		return
 	}
 
-	p.ExternalPlugList = make(map[string]ExternalPlug)
 	for _, fi := range dir {
 		if fi.IsDir() || path.Ext(fi.Name()) != ".so" {
 			continue

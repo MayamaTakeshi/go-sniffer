@@ -47,7 +47,7 @@ func (cm *Cmd) Run() {
 	}
 }
 
-//parse internal commend
+//parse internal command
 //like --help, --env, --device
 func (cm *Cmd) parseInternalCmd() {
 
@@ -59,7 +59,7 @@ func (cm *Cmd) parseInternalCmd() {
 		cm.printHelpMessage()
 		break
 	case InternalCmdEnv:
-		fmt.Println("External plug-in path : " + cm.plugHandle.dir)
+		fmt.Println("External plugin path : " + cm.plugHandle.dir)
 		break
 	case InternalCmdList:
 		cm.plugHandle.PrintList()
@@ -83,29 +83,29 @@ func (cm *Cmd) printHelpMessage() {
 	fmt.Println("    go-sniffer [device] [plug] [plug's params(optional)]")
 	fmt.Println()
 	fmt.Println("    [exp]")
-	fmt.Println("          go-sniffer en0 redis          Capture redis packet")
-	fmt.Println("          go-sniffer en0 mysql -p 3306  Capture mysql packet")
-	fmt.Println("          go-sniffer en0 mssql -p 1433  Capture mssql packet")
+	fmt.Println("          go-sniffer lo redis          Capture redis packet")
+	fmt.Println("          go-sniffer lo mysql -p 3306  Capture mysql packet")
+	fmt.Println("          go-sniffer lo mssql -p 1433  Capture mssql packet")
 	fmt.Println()
-	fmt.Println("    go-sniffer --[commend]")
+	fmt.Println("    go-sniffer [command]")
 	fmt.Println("               --help \"this page\"")
 	fmt.Println("               --env  \"environment variable\"")
-	fmt.Println("               --list \"Plug-in list\"")
+	fmt.Println("               --list \"plugin list\"")
 	fmt.Println("               --ver  \"version\"")
 	fmt.Println("               --dev  \"device\"")
 	fmt.Println("    [exp]")
-	fmt.Println("          go-sniffer --list \"show all plug-in\"")
+	fmt.Println("          go-sniffer --list \"show all plugin\"")
 	fmt.Println()
 	fmt.Println("==================================================================================")
 	cm.printDevice()
 	fmt.Println("==================================================================================")
 }
 
-//print plug-in list
+//print plugin list
 func (cm *Cmd) printPlugList() {
 	l := len(cm.plugHandle.InternalPlugList)
 	l += len(cm.plugHandle.ExternalPlugList)
-	fmt.Println("#    Number of plug-ins : " + strconv.Itoa(l))
+	fmt.Println("#    Number of plugins : " + strconv.Itoa(l))
 }
 
 //print device
@@ -119,18 +119,18 @@ func (cm *Cmd) printDevice() {
 		for _, a := range addrs {
 			if ipnet, ok := a.(*net.IPNet); ok {
 				if ip4 := ipnet.IP.To4(); ip4 != nil {
-					fmt.Println("[device] : " + iface.Name + " : " + iface.HardwareAddr.String() + "  " + ip4.String())
+					fmt.Println("[device] " + iface.Name + ": " + iface.HardwareAddr.String() + "  " + ip4.String())
 				}
 			}
 		}
 	}
 }
 
-//Parameters needed for plug-ins
+//Parameters needed for plugins
 func (cm *Cmd) parsePlugCmd() {
 
 	if len(os.Args) < 3 {
-		fmt.Println("not found [Plug-in name]")
+		fmt.Println("not found [plugin name]")
 		fmt.Println("go-sniffer [device] [plug] [plug's params(optional)]")
 		os.Exit(1)
 	}

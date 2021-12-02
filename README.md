@@ -68,17 +68,17 @@ go-sniffer
     go-sniffer [device] [plug] [plug's params(optional)]
 
     [Example]
-          go-sniffer en0 redis          Capture redis packet
-          go-sniffer en0 mysql -p 3306  Capture mysql packet
+          go-sniffer lo redis          Capture redis packet
+          go-sniffer lo mysql -p 3306  Capture mysql packet
 
-    go-sniffer --[commend]
+    go-sniffer [command]
                --help "this page"
                --env  "environment variable"
-               --list "Plug-in list"
+               --list "plugin list"
                --ver  "version"
                --dev  "device"
     [Example]
-          go-sniffer --list "show all plug-in"
+          go-sniffer --list "show all plugin"
 
 ==================================================================================
 [device] : lo0 :   127.0.0.1
