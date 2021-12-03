@@ -165,14 +165,14 @@ func (m *Mssql) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 	return packet
 }
 
-func (m *stream) resolve() {
+func (s *stream) resolve() {
 	for {
 		select {
-		case packet := <-m.packets:
+		case packet := <-s.packets:
 			if packet.isClientFlow {
-				m.resolveClientPacket(packet)
+				s.resolveClientPacket(packet)
 			} else {
-				m.resolveServerPacket(packet)
+				s.resolveServerPacket(packet)
 			}
 		}
 	}
@@ -210,7 +210,7 @@ func ucs22str(s []byte) (string, error) {
 	return string(utf16.Decode(buf)), nil
 }
 
-func (m *stream) resolveClientPacket(p *packet) {
+func (s *stream) resolveClientPacket(p *packet) {
 
 	var msg string
 
@@ -220,11 +220,11 @@ func (m *stream) resolveClientPacket(p *packet) {
 		// fmt.Printf("headers %x %d\n %x \n", p.payload[0:4], headerLength, p.payload)
 		if headerLength > 22 {
 			//not exists headers
-			msg = fmt.Sprintf("【query】 %s", string(p.payload))
+			msg = fmt.Sprintf("[query] %s", string(p.payload))
 
 		} else {
 			//tds 7.2+
-			msg = fmt.Sprintf("【query】 %s", string(p.payload[headerLength:]))
+			msg = fmt.Sprintf("[query] %s", string(p.payload[headerLength:]))
 		}
 	case 3:
 		// 4 byte
@@ -271,29 +271,29 @@ func (m *stream) resolveClientPacket(p *packet) {
 			valueLength := int(binary.LittleEndian.Uint16(p.payload[pos+1 : pos+3]))
 			pos += 2
 
-			msg = fmt.Sprintf("【query】%s", string(p.payload[pos:pos+valueLength]))
+			msg = fmt.Sprintf("[query]%s", string(p.payload[pos:pos+valueLength]))
 
 		}
 		// ParameterData
 
 	case 4:
-		msg = fmt.Sprintf("【query】 %s", "Tabular result")
+		msg = fmt.Sprintf("[query] %s", "Tabular result")
 
 	}
 
 	fmt.Println(GetNowStr(true), msg)
 }
 
-func (m *stream) resolveServerPacket(p *packet) {
+func (s *stream) resolveServerPacket(p *packet) {
 
 	var msg string
 	switch p.packetType {
 	case 4: //response
 		rows, errMsg := parseToken(p.payload)
 		if rows == 0 && len(errMsg) != 0 {
-			msg = fmt.Sprintf("【Err】Effect Rows:%d, message: %s", rows, errMsg)
+			msg = fmt.Sprintf("[ERR]Effect Rows:%d, message: %s", rows, errMsg)
 		} else {
-			msg = fmt.Sprintf("【OK】Effect Rows:%d", rows)
+			msg = fmt.Sprintf("[OK]Effect Rows:%d", rows)
 		}
 	}
 

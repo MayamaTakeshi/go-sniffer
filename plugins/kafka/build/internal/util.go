@@ -1,15 +1,14 @@
-package build
+package internal
 
 import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"strconv"
 	"time"
 )
 
-var kafkaMessageMaxBytes = 1 * 1024 * 1024 // 1MB
-var kafkaTopicPartitionMaxCount int32 = 4000
+var KafkaMessageMaxBytes = 1 * 1024 * 1024 // 1MB
+var KafkaTopicPartitionMaxCount int32 = 4000
 
 func GetNowStr(isClient bool) string {
 	var msg string
@@ -65,7 +64,7 @@ func ReadString(r io.Reader) (string, int) {
 	l := int(ReadInt16(r))
 
 	// -1 => null
-	if l <= 0 || l > kafkaMessageMaxBytes {
+	if l <= 0 || l > KafkaMessageMaxBytes {
 		return " ", 1
 	}
 
@@ -94,7 +93,7 @@ func ReadBytes(r io.Reader) []byte {
 	l := int(ReadInt32(r))
 	result := make([]byte, 0)
 
-	if l <= 0 || l > kafkaMessageMaxBytes {
+	if l <= 0 || l > KafkaMessageMaxBytes {
 		return result
 	}
 
@@ -114,48 +113,4 @@ func ReadBytes(r io.Reader) []byte {
 	}
 
 	return result
-}
-
-func ReadMessages(r io.Reader, version int16) []*Message {
-	switch version {
-	case 0:
-		return ReadMessagesV1(r)
-	case 1:
-		return ReadMessagesV1(r)
-	}
-
-	return make([]*Message, 0)
-}
-
-func ReadMessagesV1(r io.Reader) []*Message {
-	var err error
-	messages := make([]*Message, 0)
-	for {
-		message := Message{}
-		message.Offset, err = ReadInt64(r)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			if err != io.ErrUnexpectedEOF {
-				fmt.Printf("read message offset , err: %+v\n", err)
-			}
-			break
-		}
-		_ = ReadInt32(r) // message size
-		message.Crc = ReadUint32(r)
-		message.Magic = ReadByte(r)
-		message.CompressCode = ReadByte(r)
-		message.Key = ReadBytes(r)
-		message.Value = ReadBytes(r)
-		messages = append(messages, &message)
-	}
-	return messages
-}
-
-func GetRequestName(apiKey int16) string {
-	if name, ok := RequestNameMap[apiKey]; ok {
-		return name
-	}
-	return strconv.Itoa(int(apiKey))
 }
