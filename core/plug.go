@@ -101,7 +101,7 @@ func (p *Plug) LoadExternalPlugList() {
 
 	dir, err := ioutil.ReadDir(p.dir)
 	if err != nil {
-		// panic(p.dir + " 不存在，或者无权访问")
+		// no external plugins
 		return
 	}
 
@@ -155,15 +155,15 @@ func (p *Plug) ChangePath(dir string) {
 func (p *Plug) PrintList() {
 
 	//Print Internal Plug
-	for inPlugName, _ := range p.InternalPlugList {
+	for inPlugName := range p.InternalPlugList {
 		fmt.Println("internal plug : " + inPlugName)
 	}
 
-	//split
+	//split line
 	fmt.Println("-- --- --")
 
 	//print External Plug
-	for exPlugName, _ := range p.ExternalPlugList {
+	for exPlugName := range p.ExternalPlugList {
 		fmt.Println("external plug : " + exPlugName)
 	}
 }

@@ -30,7 +30,6 @@ func (d *Dispatch) Capture() {
 	handle, err := pcap.OpenLive(d.device, 65535, false, pcap.BlockForever)
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	// Set filter
@@ -48,8 +47,8 @@ func (d *Dispatch) Capture() {
 	streamFactory := &ProtocolStreamFactory{
 		dispatch: d,
 	}
-	streamPool := NewStreamPool(streamFactory)
-	assembler := NewAssembler(streamPool)
+	streamPool := tcpassembly.NewStreamPool(streamFactory)
+	assembler := tcpassembly.NewAssembler(streamPool)
 	ticker := time.Tick(time.Minute)
 
 	// Loop until ctrl+z

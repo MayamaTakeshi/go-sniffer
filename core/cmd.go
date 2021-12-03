@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const InternalCmdPrefix = "--"
+const InternalCmdPrefix = "-" // double dash
 const (
 	InternalCmdHelp = "help"
 	InternalCmdEnv  = "env"
@@ -57,19 +57,14 @@ func (cm *Cmd) parseInternalCmd() {
 	switch cmd {
 	case InternalCmdHelp:
 		cm.printHelpMessage()
-		break
 	case InternalCmdEnv:
 		fmt.Println("External plugin path : " + cm.plugHandle.dir)
-		break
 	case InternalCmdList:
 		cm.plugHandle.PrintList()
-		break
 	case InternalCmdVer:
 		fmt.Println(cxt.Version)
-		break
 	case InternalDevice:
 		cm.printDevice()
-		break
 	}
 	os.Exit(1)
 }
