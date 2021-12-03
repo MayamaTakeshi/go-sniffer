@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"go-sniffer/plugSrc/mongodb/build/internal/json"
+	"go-sniffer/plugins/mongodb/build/internal/json"
 	"strconv"
 	"time"
 )

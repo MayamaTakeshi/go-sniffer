@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"plugin"
 
-	http "go-sniffer/plugSrc/http/build"
-	kafka "go-sniffer/plugSrc/kafka/build"
-	mongodb "go-sniffer/plugSrc/mongodb/build"
-	mssql "go-sniffer/plugSrc/mssql/build"
-	mysql "go-sniffer/plugSrc/mysql/build"
-	redis "go-sniffer/plugSrc/redis/build"
+	http "go-sniffer/plugins/http/build"
+	kafka "go-sniffer/plugins/kafka/build"
+	mongodb "go-sniffer/plugins/mongodb/build"
+	mssql "go-sniffer/plugins/mssql/build"
+	mysql "go-sniffer/plugins/mysql/build"
+	redis "go-sniffer/plugins/redis/build"
 
 	"github.com/google/gopacket"
 )

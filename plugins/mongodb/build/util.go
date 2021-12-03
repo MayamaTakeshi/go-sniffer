@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"go-sniffer/plugSrc/mongodb/build/bson"
+	"go-sniffer/plugins/mongodb/build/bson"
 	"io"
 	"time"
 )

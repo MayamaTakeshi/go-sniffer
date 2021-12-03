@@ -9,22 +9,14 @@ build-static: pcap
 
 .PHONY: pcap
 pcap:
-	@if [ -a libpcap ]; \
-	then \
-		cd libpcap && git pull ; \
-		if [ -a libpcap.a ]; \
-		then \
-			echo "libpcap has been builded"; \
-		else \
-			./configure && make ; \
-		fi \
-	else \
-		git clone https://github.com/the-tcpdump-group/libpcap.git ; \
-		cd libpcap; \
-		if [ -a libpcap.a ]; \
-		then \
-			echo "libpcap has been builded"; \
-		else \
-			./configure && make ; \
-		fi \
-	fi
+ifeq (,$(wildcard libpcap))
+	git clone https://github.com/the-tcpdump-group/libpcap.git
+	cd libpcap && ./configure && make
+else
+	cd libpcap && make clean && ./configure && make
+endif
+
+.PHONY: debug
+debug:
+	go build -gcflags "all=-N -l"
+	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./go-sniffer
