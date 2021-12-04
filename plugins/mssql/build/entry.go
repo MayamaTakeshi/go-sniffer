@@ -291,9 +291,9 @@ func (s *stream) resolveServerPacket(p *packet) {
 	case 4: //response
 		rows, errMsg := parseToken(p.payload)
 		if rows == 0 && len(errMsg) != 0 {
-			msg = fmt.Sprintf("[ERR]Effect Rows:%d, message: %s", rows, errMsg)
+			msg = fmt.Sprintf("[ERR]Affected Rows:%d, message: %s", rows, errMsg)
 		} else {
-			msg = fmt.Sprintf("[OK]Effect Rows:%d", rows)
+			msg = fmt.Sprintf("[OK]Affected Rows:%d", rows)
 		}
 	}
 

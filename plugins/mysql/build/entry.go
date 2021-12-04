@@ -236,7 +236,7 @@ func (stm *stream) resolveServerPacket(payload []byte, seq int) {
 		l, _, _ := LengthEncodedInt(payload[pos:])
 		affectedRows := int(l)
 
-		msg += GetNowStr(false) + "%s Effect Row:%s"
+		msg += GetNowStr(false) + "%s Affected Row:%s"
 		msg = fmt.Sprintf(msg, OkPacket, strconv.Itoa(affectedRows))
 
 	default:
