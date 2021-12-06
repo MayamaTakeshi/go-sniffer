@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/gopacket"
@@ -24,12 +25,16 @@ const (
 	CmdPort string = "-p"
 )
 
-var redis = &Redis{
-	port:    Port,
-	version: Version,
-}
+var redis *Redis
+var once sync.Once
 
 func NewInstance() *Redis {
+	once.Do(func() {
+		redis = &Redis{
+			port:    Port,
+			version: Version,
+		}
+	})
 	return redis
 }
 

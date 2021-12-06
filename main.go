@@ -14,6 +14,6 @@ func profiling() {
 func main() {
 	//go profiling()
 
-	core := core.New()
-	core.Run()
+	c := core.New()
+	c.Run()
 }

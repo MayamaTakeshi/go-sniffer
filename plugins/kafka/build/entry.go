@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"sync"
 
+	"go-sniffer/plugins/kafka/build/internal"
+	"go-sniffer/plugins/kafka/build/request"
+
 	"github.com/google/gopacket"
 )
 
@@ -56,8 +59,8 @@ type messageSet struct {
 
 func newMessageSet(r io.Reader) messageSet {
 	messageSet := messageSet{}
-	messageSet.offset, _ = ReadInt64(r)
-	messageSet.messageSize = ReadInt32(r)
+	messageSet.offset, _ = internal.ReadInt64(r)
+	messageSet.messageSize = internal.ReadInt32(r)
 
 	return messageSet
 }
@@ -70,18 +73,18 @@ type message struct {
 	value      []byte
 }
 
-var kafkaInstance *Kafka
+var kafka *Kafka
 var once sync.Once
 
 func NewInstance() *Kafka {
 	once.Do(func() {
-		kafkaInstance = &Kafka{
+		kafka = &Kafka{
 			port:    Port,
 			version: Version,
 			source:  make(map[string]*stream),
 		}
 	})
-	return kafkaInstance
+	return kafka
 }
 
 func (m *Kafka) SetFlag(flg []string) {
@@ -90,7 +93,7 @@ func (m *Kafka) SetFlag(flg []string) {
 		return
 	}
 	if c>>1 != 1 {
-		panic("Mongodb参数数量不正确!")
+		panic("Kafka 参数数量不正确!")
 	}
 	for i := 0; i < c; i = i + 2 {
 		key := flg[i]
@@ -102,7 +105,7 @@ func (m *Kafka) SetFlag(flg []string) {
 			if err != nil {
 				panic("端口数不正确")
 			}
-			kafkaInstance.port = p
+			kafka.port = p
 			if p < 0 || p > 65535 {
 				panic("参数不正确: 端口范围(0-65535)")
 			}
@@ -128,33 +131,29 @@ func (m *Kafka) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 
 	//resolve packet
 	if _, ok := m.source[uuid]; !ok {
-
-		var newStream = stream{
+		var s = stream{
 			packets:        make(chan *packet, 100),
 			correlationMap: make(map[int32]requestHeader),
 		}
-
-		m.source[uuid] = &newStream
-		go newStream.resolve()
+		m.source[uuid] = &s
+		go s.resolve()
 	}
 
 	//read bi-directional packet
 	//server -> client || client -> server
 	for {
-
-		newPacket := m.newPacket(net, transport, buf)
-		if newPacket == nil {
+		p := m.newPacket(net, transport, buf)
+		if p == nil {
 			continue
 		}
-
-		m.source[uuid].packets <- newPacket
+		m.source[uuid].packets <- p
 	}
 }
 
 func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 
 	//read packet
-	pk := packet{}
+	p := packet{}
 
 	/*
 		bs := make([]byte, 0)
@@ -167,23 +166,23 @@ func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 	*/
 
 	//read messageSize
-	pk.messageSize = ReadInt32(r)
-	if pk.messageSize == 0 {
+	p.messageSize = internal.ReadInt32(r)
+	if p.messageSize == 0 {
 		return nil
 	}
-	fmt.Printf("pk.messageSize: %d\n", pk.messageSize)
+	fmt.Printf("pk.messageSize: %d\n", p.messageSize)
 
 	//set flow direction
 	if transport.Src().String() == strconv.Itoa(m.port) {
-		pk.isClientFlow = false
+		p.isClientFlow = false
 
 		respHeader := responseHeader{}
-		respHeader.correlationId = ReadInt32(r)
+		respHeader.correlationId = internal.ReadInt32(r)
 		// TODO: extract request
-		pk.responseHeader = respHeader
+		p.responseHeader = respHeader
 
 		var buf bytes.Buffer
-		if _, err := io.CopyN(&buf, r, int64(pk.messageSize-4)); err != nil {
+		if _, err := io.CopyN(&buf, r, int64(p.messageSize-4)); err != nil {
 			if err == io.EOF {
 				fmt.Println(net, transport, " 关闭")
 				return nil
@@ -192,20 +191,20 @@ func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 			return nil
 		}
 
-		pk.payload = &buf
+		p.payload = &buf
 
 	} else {
-		pk.isClientFlow = true
+		p.isClientFlow = true
 
 		var clientIdLen = 0
 		reqHeader := requestHeader{}
-		reqHeader.apiKey = ReadInt16(r)
-		reqHeader.apiVersion = ReadInt16(r)
-		reqHeader.correlationId = ReadInt32(r)
-		reqHeader.clientId, clientIdLen = ReadString(r)
-		pk.requestHeader = reqHeader
+		reqHeader.apiKey = internal.ReadInt16(r)
+		reqHeader.apiVersion = internal.ReadInt16(r)
+		reqHeader.correlationId = internal.ReadInt32(r)
+		reqHeader.clientId, clientIdLen = internal.ReadString(r)
+		p.requestHeader = reqHeader
 		var buf bytes.Buffer
-		if _, err := io.CopyN(&buf, r, int64(pk.messageSize-10)-int64(clientIdLen)); err != nil {
+		if _, err := io.CopyN(&buf, r, int64(p.messageSize-10)-int64(clientIdLen)); err != nil {
 			if err == io.EOF {
 				fmt.Println(net, transport, " 关闭")
 				return nil
@@ -213,80 +212,80 @@ func (m *Kafka) newPacket(net, transport gopacket.Flow, r io.Reader) *packet {
 			fmt.Println("流解析错误", net, transport, ":", err)
 			return nil
 		}
-		pk.payload = &buf
+		p.payload = &buf
 	}
 
-	return &pk
+	return &p
 }
 
-func (stm *stream) resolve() {
+func (s *stream) resolve() {
 	for {
 		select {
-		case packet := <-stm.packets:
+		case packet := <-s.packets:
 			if packet.isClientFlow {
-				stm.correlationMap[packet.requestHeader.correlationId] = packet.requestHeader
-				stm.resolveClientPacket(packet)
+				s.correlationMap[packet.requestHeader.correlationId] = packet.requestHeader
+				s.resolveClientPacket(packet)
 			} else {
-				if _, ok := stm.correlationMap[packet.responseHeader.correlationId]; ok {
-					stm.resolveServerPacket(packet, stm.correlationMap[packet.responseHeader.correlationId])
+				if _, ok := s.correlationMap[packet.responseHeader.correlationId]; ok {
+					s.resolveServerPacket(packet, s.correlationMap[packet.responseHeader.correlationId])
 				}
 			}
 		}
 	}
 }
 
-func (stm *stream) resolveServerPacket(pk *packet, rh requestHeader) {
+func (s *stream) resolveServerPacket(p *packet, rh requestHeader) {
 	var msg interface{}
-	payload := pk.payload
+	payload := p.payload
 
-	action := Action{
-		Request:    GetRequestName(pk.apiKey),
+	action := internal.Action{
+		Request:    internal.GetRequestName(p.apiKey),
 		Direction:  "isServer",
-		ApiVersion: pk.apiVersion,
+		ApiVersion: p.apiVersion,
 	}
 	switch int(rh.apiKey) {
-	case ProduceRequest:
-		msg = ReadProduceResponse(payload, rh.apiVersion)
+	case internal.ProduceRequest:
+		msg = request.ReadProduceResponse(payload, rh.apiVersion)
 	// case MetadataRequest:
 	// 	msg = ReadMetadataResponse(payload, rh.apiVersion)
 	default:
-		GetRequestName(rh.apiKey)
-		fmt.Printf("resolveServerPacket Api: %s TODO: ", GetRequestName(rh.apiKey))
+		internal.GetRequestName(rh.apiKey)
+		fmt.Printf("resolveServerPacket Api: %s TODO: ", internal.GetRequestName(rh.apiKey))
 	}
 
 	if msg != nil {
 		action.Message = msg
 	}
-	bs, err := json.Marshal(action)
+	j, err := json.Marshal(action)
 	if err != nil {
-		fmt.Printf("resolveServerPacket, Error: %+v\n", err)
+		fmt.Printf("resolveServerPacket, Error: %s\n", err.Error())
 	}
-	fmt.Printf("%s\n", string(bs))
+	fmt.Println(string(j))
 }
 
-func (stm *stream) resolveClientPacket(pk *packet) {
+func (s *stream) resolveClientPacket(p *packet) {
 	var msg interface{}
-	action := Action{
-		Request:    GetRequestName(pk.apiKey),
+	action := internal.Action{
+		Request:    internal.GetRequestName(p.apiKey),
 		Direction:  "isClient",
-		ApiVersion: pk.apiVersion,
+		ApiVersion: p.apiVersion,
 	}
-	payload := pk.payload
-	switch int(pk.apiKey) {
-	case ProduceRequest:
-		msg = ReadProduceRequest(payload, pk.apiVersion)
+	payload := p.payload
+	switch int(p.apiKey) {
+	case internal.ProduceRequest:
+		msg = request.ReadProduceRequest(payload, p.apiVersion)
 	// case MetadataRequest:
 	// 	msg = ReadMetadataRequest(payload, pk.apiVersion)
 	default:
-		fmt.Printf("resolveClientPacket Api: %s TODO: ", GetRequestName(pk.apiKey))
+		fmt.Printf("resolveClientPacket Api: %s TODO: ", internal.GetRequestName(p.apiKey))
 	}
 
 	if msg != nil {
 		action.Message = msg
 	}
-	bs, err := json.Marshal(action)
+	j, err := json.Marshal(action)
 	if err != nil {
-		fmt.Printf("json marshal action failed, err: %+v\n", err)
+		fmt.Printf("json marshal action failed, err: %s\n", err.Error())
 	}
-	fmt.Printf("%s\n", string(bs))
+	fmt.Println(string(j))
 }

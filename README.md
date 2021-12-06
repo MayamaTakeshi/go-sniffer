@@ -16,8 +16,7 @@
 - [http](#http)
 - [mongodb](#mongodb)
 - [mssql](#mssql)
-- kafka (developing)
-- ...
+- [kafka](#kafka)
 
 ## Demo
 
@@ -29,9 +28,9 @@ go-sniffer en0 mysql
 
 ## Setup
 
-- support : `MacOS` `Linux` `Unix`
-- not support : `windows`
-- If you encounter problems in the `go get` process, try upgrading the go version （如果go get 过程中遇到问题，请尝试升级go版本）
+- support : `MacOS`, `Linux`
+- not support : `Windows`
+- If you encounter problems in the `go get` process, try upgrading the go version.
 
 ### Centos
 
@@ -45,10 +44,10 @@ yum -y install libpcap-devel
 apt-get install libpcap-dev
 ```
 
-### MacOs
+### Mac OS
 
 ``` bash
-
+brew install libpcap
 ```
 
 ### RUN

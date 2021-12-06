@@ -1,12 +1,12 @@
 package build
 
 const (
-	ComQueryRequestPacket     string = "【Query】"
-	OkPacket                  string = "【Ok】"
-	ErrorPacket               string = "【Err】"
-	PreparePacket             string = "【Pretreatment】"
-	SendClientHandshakePacket string = "【User Auth】"
-	SendServerHandshakePacket string = "【Login】"
+	ComQueryRequestPacket     string = "[QUERY]"
+	OkPacket                  string = "[OK]"
+	ErrorPacket               string = "[ERR]"
+	PreparePacket             string = "[PREPARE]"
+	SendClientHandshakePacket string = "[LOGIN]"
+	SendServerHandshakePacket string = "[AUTH]"
 )
 
 const (

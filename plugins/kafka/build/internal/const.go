@@ -1,4 +1,6 @@
-package build
+package internal
+
+import "strconv"
 
 const (
 	ProduceRequest  = 0
@@ -19,8 +21,6 @@ const (
 	CreateTopicsReqKind     = 19
 )
 
-const ()
-
 var RequestNameMap = map[int16]string{
 	0: "ProduceRequest",
 	1: "FetchRequest",
@@ -38,6 +38,13 @@ var RequestNameMap = map[int16]string{
 	16: "ListGroupsRequest",
 	18: "APIVersionsReqKind",
 	19: "CreateTopicsReqKind",
+}
+
+func GetRequestName(apiKey int16) string {
+	if name, ok := RequestNameMap[apiKey]; ok {
+		return name
+	}
+	return strconv.Itoa(int(apiKey))
 }
 
 const (
