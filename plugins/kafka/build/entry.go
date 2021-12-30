@@ -23,12 +23,12 @@ const (
 type Kafka struct {
 	port    int
 	version string
-	source  map[string]*stream
+	source  sync.Map // map[string]*stream
 }
 
 type stream struct {
 	packets        chan *packet
-	correlationMap map[int32]requestHeader
+	correlationMap sync.Map // map[int32]requestHeader
 }
 
 type packet struct {
@@ -81,7 +81,6 @@ func NewInstance() *Kafka {
 		kafka = &Kafka{
 			port:    Port,
 			version: Version,
-			source:  make(map[string]*stream),
 		}
 	})
 	return kafka
@@ -130,12 +129,11 @@ func (m *Kafka) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 	uuid := fmt.Sprintf("%v:%v", net.FastHash(), transport.FastHash())
 
 	//resolve packet
-	if _, ok := m.source[uuid]; !ok {
+	if _, ok := m.source.Load(uuid); !ok {
 		var s = stream{
-			packets:        make(chan *packet, 100),
-			correlationMap: make(map[int32]requestHeader),
+			packets: make(chan *packet, 100),
 		}
-		m.source[uuid] = &s
+		m.source.Store(uuid, &s)
 		go s.resolve()
 	}
 
@@ -146,7 +144,9 @@ func (m *Kafka) ResolveStream(net, transport gopacket.Flow, buf io.Reader) {
 		if p == nil {
 			continue
 		}
-		m.source[uuid].packets <- p
+		if s, ok := m.source.Load(uuid); ok {
+			s.(*stream).packets <- p
+		}
 	}
 }
 
@@ -223,11 +223,12 @@ func (s *stream) resolve() {
 		select {
 		case packet := <-s.packets:
 			if packet.isClientFlow {
-				s.correlationMap[packet.requestHeader.correlationId] = packet.requestHeader
+				// s.correlationMap[packet.requestHeader.correlationId] = packet.requestHeader
+				s.correlationMap.Store(packet.requestHeader.correlationId, packet.requestHeader)
 				s.resolveClientPacket(packet)
 			} else {
-				if _, ok := s.correlationMap[packet.responseHeader.correlationId]; ok {
-					s.resolveServerPacket(packet, s.correlationMap[packet.responseHeader.correlationId])
+				if id, ok := s.correlationMap.Load(packet.responseHeader.correlationId); ok {
+					s.resolveServerPacket(packet, id.(requestHeader))
 				}
 			}
 		}
