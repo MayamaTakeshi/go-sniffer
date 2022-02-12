@@ -49,6 +49,10 @@ func (d *Dispatch) Capture() {
 	}
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
+
+    assembler.MaxBufferedPagesTotal = 1
+    assembler.MaxBufferedPagesPerConnection = 1
+
 	ticker := time.Tick(time.Minute)
 
 	// Loop until ctrl+z
